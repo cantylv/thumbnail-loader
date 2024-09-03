@@ -1,0 +1,23 @@
+upload:
+  key: AIzaSyCwldouyj4wqx88BMEDKyHlhgeBCLjvhp8
+
+memcached:
+  host: memcached
+  port: 11211
+  cache_timeout: 10m
+
+mysql:
+  host: mysql
+  port: 3306
+
+minio:
+  host: minio
+  port: 9000
+  bucket_name: images
+  access_key: root
+  secret_access_key: 123
+  use_ssl: false
+
+async: false
+cache_inmemory: false
+upload_folder: uploads

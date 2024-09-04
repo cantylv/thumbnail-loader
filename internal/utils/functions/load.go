@@ -25,7 +25,7 @@ func load(p *props.Load) {
 		// key == video_id + width
 		// value == minio url
 		for _, videoResolution := range p.Resolutions {
-			item, err := p.ServiceCluster.CacheClient.Get(fmt.Sprintf("%s%d", p.VideoId, videoResolution))
+			item, err := p.ServiceCluster.InMemoryCacheClient.Get(fmt.Sprintf("%s%d", p.VideoId, videoResolution))
 			if err != nil {
 				if !errors.Is(err, memcache.ErrCacheMiss) {
 					p.Logger.Info(fmt.Sprintf("internal error while cache hit: %v", err))
@@ -95,7 +95,7 @@ func loadDataFromServer(p *props.LoadDataFromServer) error {
 	// key - width, value - image byte
 	imgUrlS3 := make(map[entity.ThumbnailBody][]byte, len(imagesDescriptor))
 	for _, descr := range imagesDescriptor {
-		imgData, err := uploadImageFromYoutube(descr, loadFolder)
+		imgData, err := uploadImageFromYoutube(descr, responseData.Items[0].Snippet.Title)
 		if err != nil {
 			p.Logger.Error(fmt.Sprintf("error while uploading image: %v", err.Error()))
 		}
@@ -160,10 +160,12 @@ func saveS3(p *props.SaveS3) error {
 			Value:      []byte(loadPath),
 			Expiration: 600,
 		}
-		err = p.Cluster.CacheClient.Set(&item)
-		if err != nil {
-			p.Logger.Info(fmt.Sprintf("error while setting value in cache: %v", err.Error()))
-			continue
+		if viper.GetBool("cache_inmemory") {
+			err = p.Cluster.InMemoryCacheClient.Set(&item)
+			if err != nil {
+				p.Logger.Info(fmt.Sprintf("error while setting value in cache: %v", err.Error()))
+				continue
+			}
 		}
 	}
 	return nil

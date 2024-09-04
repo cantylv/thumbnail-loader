@@ -1,2 +1,4 @@
 .history/
 .vscode/
+services/minio/data
+services/mysql/data

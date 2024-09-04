@@ -14,9 +14,17 @@ func Run(logger *zap.Logger) {
 	// initialization of rdbms, s3, in-memory storage
 	serviceCluster := services.Init(logger)
 	defer func(cluster *services.Services) {
-		err := serviceCluster.CacheClient.Close()
-		if err != nil {
-			logger.Error(fmt.Sprintf("error while closing memcached: %v", err))
+		if serviceCluster.InMemoryCacheClient != nil {
+			err := serviceCluster.InMemoryCacheClient.Close()
+			if err != nil {
+				logger.Error(fmt.Sprintf("error while closing memcached: %v", err))
+			}
+		}
+		if serviceCluster.DBCacheClient != nil {
+			err := serviceCluster.DBCacheClient.Close()
+			if err != nil {
+				logger.Error(fmt.Sprintf("error while closing mysql: %v", err))
+			}
 		}
 	}(serviceCluster)
 

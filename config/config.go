@@ -14,13 +14,16 @@ func setDefaultParameters() {
 	viper.AutomaticEnv()
 
 	// __memcached__ variables
-	viper.SetDefault("memcached.host", "memcached")
+	viper.SetDefault("memcached.host", "localhost")
 	viper.SetDefault("memcached.port", 11211)
 	viper.SetDefault("memcached.cache_timeout", time.Minute*10)
 
 	// __mysql__ variables
-	viper.SetDefault("mysql.host", "mysql")
+	viper.SetDefault("mysql.host", "localhost")
 	viper.SetDefault("mysql.port", 3306)
+	viper.SetDefault("mysql.user", "admin")
+	viper.SetDefault("mysql.password", 123)
+	viper.SetDefault("mysql.dbname", "urls")
 
 	// __project__ variables
 	viper.SetDefault("async", false)

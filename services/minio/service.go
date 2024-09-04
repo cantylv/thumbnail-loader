@@ -14,7 +14,10 @@ import (
 func Init(logger *zap.Logger) *minio.Client {
 	minioEndpoint := viper.GetString("minio.host") + ":" + viper.GetString("minio.port")
 	client, err := minio.New(minioEndpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(viper.GetString("minio.access_key"), viper.GetString("minio.secret_access_key"), ""),
+		Creds: credentials.NewStaticV4(
+			viper.GetString("minio.access_key"),
+			viper.GetString("minio.secret_access_key"),
+			""),
 		Secure: viper.GetBool("minio.use_ssl"),
 	})
 	if err != nil {

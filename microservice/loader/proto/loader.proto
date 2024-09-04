@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "./gen";
+
+import "google/protobuf/empty.proto";
+
+service DownloadManager {
+  rpc Download (Args) returns (google.protobuf.Empty);
+}
+
+message Args {
+  repeated string data = 1;
+}

@@ -9,7 +9,7 @@ import (
 func main() {
 	logger := zap.Must(zap.NewProduction())
 	// reading env variables, config file, cli flags
-	config.Read(logger)
+	config.Read("./config/config.yaml", logger)
 	// initalize app instance
 	app.Run(logger)
 	logger.Info("app has successfully completed its work")

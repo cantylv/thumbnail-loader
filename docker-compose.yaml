@@ -22,4 +22,15 @@ services:
     container_name: memcached
     ports:
       - "11211:11211"
+  grpc_loader:
+    build: 
+      context: ./
+      dockerfile: ./microservice/loader/Dockerfile
+    restart: always
+    container_name: grpc_loader
+    ports:
+      - "8000:8000"
+    depends_on:
+      - memcached
+      - minio
     

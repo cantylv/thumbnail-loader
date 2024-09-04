@@ -14,22 +14,21 @@ func setDefaultParameters() {
 	viper.AutomaticEnv()
 
 	// __memcached__ variables
-	viper.SetDefault("memcached.host", "localhost")
+	viper.SetDefault("memcached.host", "memcached")
 	viper.SetDefault("memcached.port", 11211)
 	viper.SetDefault("memcached.cache_timeout", time.Minute*10)
 
-	// __mysql__ variables
-	viper.SetDefault("mysql.host", "localhost")
-	viper.SetDefault("mysql.port", 3306)
-	viper.SetDefault("mysql.user", "admin")
-	viper.SetDefault("mysql.password", 123)
-	viper.SetDefault("mysql.dbname", "urls")
+	// __grpc_download variables
+	viper.SetDefault("grpc_loader.host", "localhost")
+	viper.SetDefault("grpc_loader.port", 8001)
 
 	// __project__ variables
 	viper.SetDefault("async", false)
 	viper.SetDefault("cache_inmemory", false)
 
 	// __minio__ variables
+	viper.SetDefault("minio.host", "minio")
+	viper.SetDefault("minio.port", 9000)
 	viper.SetDefault("minio.bucket_name", "images")
 	viper.SetDefault("minio.access_key", "admin")
 	viper.SetDefault("minio.secret_access_key", 123)
@@ -64,16 +63,15 @@ func readCmdFlags() {
 	viper.BindPFlag("upload_folder", pflag.Lookup("upload_folder"))
 }
 
-func Read(logger *zap.Logger) {
+func Read(path string, logger *zap.Logger) {
 	setDefaultParameters()
 	readCmdFlags()
-	viper.SetConfigFile("./config/config.yaml")
+	viper.SetConfigFile(path)
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(*os.PathError); !ok {
 			logger.Panic(fmt.Sprintf("fatal error config file: %v", err))
 		}
 		logger.Warn("warning: configuration file is not found, programm will be executed within default configuration")
 	}
-
 	logger.Info("successful read of configuration")
 }

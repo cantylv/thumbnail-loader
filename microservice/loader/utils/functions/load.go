@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/cantylv/thumbnail-loader/internal/entity"
-	"github.com/cantylv/thumbnail-loader/internal/props"
+	"github.com/cantylv/thumbnail-loader/microservice/loader/internal/entity"
+	"github.com/cantylv/thumbnail-loader/microservice/loader/internal/props"
 	"github.com/cantylv/thumbnail-loader/services"
 	"github.com/mailru/easyjson"
 	"github.com/minio/minio-go/v7"
@@ -22,9 +22,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// load
+// Load
 // loads data from cache on hit, in another way load data from youtube servers
-func load(p *props.Load) {
+func Load(ctx context.Context, p *props.Load) {
 	// it's for in-memory storages
 	cacheHitSuccess := make([]int, 0, len(p.Resolutions))
 	if p.CacheInmemoryNeed {
@@ -44,7 +44,7 @@ func load(p *props.Load) {
 		}
 	} else {
 		for i, imgResolutionWidth := range p.Resolutions {
-			value, err := p.ServiceCluster.DBCacheClient.Get(context.Background(), fmt.Sprintf("%s%d", p.VideoId, imgResolutionWidth))
+			value, err := p.RepoCache.Get(ctx, fmt.Sprintf("%s%d", p.VideoId, imgResolutionWidth))
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
 					p.Logger.Info(fmt.Sprintf("internal error while cache hit: %v", err))
@@ -58,7 +58,7 @@ func load(p *props.Load) {
 	}
 	missingResolutionWidth := getMissingImageWidth(cacheHitSuccess, p.Resolutions)
 	// if no cache hit
-	loadDataFromServerProps := props.GetLoadDataFromServer(p.VideoId, missingResolutionWidth, p.ServiceCluster, p.Logger)
+	loadDataFromServerProps := props.GetLoadDataFromServer(p.VideoId, missingResolutionWidth, p.RepoCache, p.ServiceCluster, p.Logger)
 	err := loadDataFromServer(loadDataFromServerProps)
 	if err != nil {
 		p.Logger.Error(fmt.Sprintf("error while loading image from youtube server: %v", err))
@@ -142,7 +142,7 @@ func loadDataFromServer(p *props.LoadDataFromServer) error {
 		imgUrlS3[descr] = imgData
 	}
 
-	saveS3Props := props.GetSaveS3(imgUrlS3, viper.GetString("minio.bucket_name"), responseData.Items[0].Snippet.Title, p.VideoId, p.ServiceCluster, p.Logger)
+	saveS3Props := props.GetSaveS3(imgUrlS3, viper.GetString("minio.bucket_name"), responseData.Items[0].Snippet.Title, p.VideoId, p.RepoCache, p.ServiceCluster, p.Logger)
 	saveS3AndCache(saveS3Props)
 	return nil
 }
@@ -226,7 +226,7 @@ func saveS3AndCache(p *props.SaveS3) error {
 				continue
 			}
 		} else {
-			err = p.Cluster.DBCacheClient.Set(context.Background(), fmt.Sprintf("%s%d", p.VideoId, imgDescriptor.Width), loadPath)
+			err = p.RepoCache.Save(context.Background(), fmt.Sprintf("%s%d", p.VideoId, imgDescriptor.Width), loadPath)
 			if err != nil {
 				p.Logger.Info(fmt.Sprintf("error while setting value in cache: %v", err.Error()))
 				continue

@@ -3,24 +3,29 @@ package app
 import (
 	"fmt"
 
-	"github.com/cantylv/thumbnail-loader/internal/utils/functions"
-	"github.com/cantylv/thumbnail-loader/services"
+	"github.com/cantylv/thumbnail-loader/internal/functions"
+	"github.com/cantylv/thumbnail-loader/microservice/loader/proto/gen"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Run
 // start app engine (logic)
 func Run(logger *zap.Logger) {
-	// initialization of rdbms, s3, in-memory storage
-	serviceCluster := services.Init(logger)
-	defer func(cluster *services.Services) {
-		if serviceCluster.InMemoryCacheClient != nil {
-			err := serviceCluster.InMemoryCacheClient.Close()
-			if err != nil {
-				logger.Error(fmt.Sprintf("error while closing memcached: %v", err))
-			}
+	// init grpc client
+	serverConnect, err := grpc.NewClient(fmt.Sprintf("%s:%d", viper.GetString("grpc_loader.host"), viper.GetInt("grpc_loader.port")),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	defer func(serverConnect *grpc.ClientConn) {
+		err := serverConnect.Close()
+		if err != nil {
+			logger.Error(err.Error())
 		}
-	}(serviceCluster)
-
-	functions.StartEngine(serviceCluster, logger)
+	}(serverConnect)
+	if err != nil {
+		logger.Error(fmt.Sprintf("error while creating grpc client: %v", err))
+		return
+	}
+	functions.StartEngine(gen.NewDownloadManagerClient(serverConnect), logger)
 }

@@ -20,12 +20,6 @@ func Run(logger *zap.Logger) {
 				logger.Error(fmt.Sprintf("error while closing memcached: %v", err))
 			}
 		}
-		if serviceCluster.DBCacheClient != nil {
-			err := serviceCluster.DBCacheClient.Close()
-			if err != nil {
-				logger.Error(fmt.Sprintf("error while closing mysql: %v", err))
-			}
-		}
 	}(serviceCluster)
 
 	functions.StartEngine(serviceCluster, logger)

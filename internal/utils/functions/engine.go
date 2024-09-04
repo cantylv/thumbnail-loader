@@ -28,11 +28,12 @@ func StartEngine(cluster *services.Services, logger *zap.Logger) {
 	}
 
 	// video resolutions for cache
-	resolutions := []int{120, 240, 360, 540, 720}
+	resolutions := []int{120, 320, 480, 640, 1280}
 
 	cacheInmemoryNeed := viper.GetBool("cache_inmemory")
 	asyncNeed := viper.GetBool("async")
 	if asyncNeed {
+		logger.Info("asynchronous loading started")
 		var wg sync.WaitGroup
 		for _, id := range ids {
 			wg.Add(1)
@@ -44,6 +45,7 @@ func StartEngine(cluster *services.Services, logger *zap.Logger) {
 		}
 		wg.Wait()
 	} else {
+		logger.Info("synchronous loading started")
 		for _, id := range ids {
 			p := props.GetLoad(id, cacheInmemoryNeed, resolutions, cluster, logger)
 			load(p)

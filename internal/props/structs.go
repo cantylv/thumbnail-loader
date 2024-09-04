@@ -25,16 +25,18 @@ func GetLoad(videoId string, cache bool, resolutions []int, cluster *services.Se
 }
 
 type LoadDataFromServer struct {
-	VideoId        string
-	ServiceCluster *services.Services
-	Logger         *zap.Logger
+	VideoId                string
+	MissingResolutionWidth []int
+	ServiceCluster         *services.Services
+	Logger                 *zap.Logger
 }
 
-func GetLoadDataFromServer(videoId string, cluster *services.Services, logger *zap.Logger) *LoadDataFromServer {
+func GetLoadDataFromServer(videoId string, missingResolutionWidth []int, cluster *services.Services, logger *zap.Logger) *LoadDataFromServer {
 	return &LoadDataFromServer{
-		VideoId:        videoId,
-		ServiceCluster: cluster,
-		Logger:         logger,
+		VideoId:                videoId,
+		MissingResolutionWidth: missingResolutionWidth,
+		ServiceCluster:         cluster,
+		Logger:                 logger,
 	}
 }
 

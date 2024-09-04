@@ -1,4 +1,6 @@
 .history/
 .vscode/
 services/minio/data
-services/mysql/data
+services/sqlite/data
+internal/entity/entity_easyjson.go
+uploads

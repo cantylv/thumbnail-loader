@@ -1,21 +1,6 @@
 version: "3.7"
 
 services:
-  mysql:
-    image: mysql:9.0.1
-    restart: always
-    container_name: mysql
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./services/mysql/data:/var/lib/mysql/
-    env_file: .env
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    tty: true
   minio:
     image: quay.io/minio/minio:latest
     restart: always

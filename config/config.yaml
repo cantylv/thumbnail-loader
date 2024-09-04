@@ -6,12 +6,6 @@ memcached:
   port: 11211
   cache_timeout: 10m
 
-mysql:
-  host: localhost
-  port: 3306
-  user: admin
-  password: admin123
-
 minio:
   host: localhost
   port: 9000

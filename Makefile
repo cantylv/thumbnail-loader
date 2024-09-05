@@ -3,9 +3,6 @@ lint:
 	go vet ./...
 	golangci-lint run ./...
 
-easyjs:
-	easyjson -no_std_marshalers -all microservice/loader/internal/entity
-
 pb:
 	protoc -I microservice/loader/proto microservice/loader/proto/loader.proto --go_out=microservice/loader/proto --go-grpc_out=microservice/loader/proto
 
@@ -15,7 +12,7 @@ vendor:
 tidy:
 	go mod tidy
 
-init: tidy easyjs pb 
+init: tidy pb 
 	mkdir ./services/minio/data ./services/sqlite/data
 	touch ./services/sqlite/data/database.db
 

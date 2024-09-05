@@ -9,7 +9,9 @@ import (
 
 	"github.com/cantylv/thumbnail-loader/microservice/loader/proto/gen"
 	e "github.com/cantylv/thumbnail-loader/microservice/loader/utils/myerrors"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 var (
@@ -27,7 +29,17 @@ func StartEngine(client gen.DownloadManagerClient, logger *zap.Logger) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3*len(cmdArgs))*time.Second)
 	defer cancel()
-	_, err = client.Download(ctx, &gen.Args{Data: cmdArgs})
+	_, err = client.Download(ctx, &gen.DownloadProps{
+		Arguments: &gen.Args{Data: cmdArgs},
+		Flags: &gen.CmdFlags{
+			NeedCache: viper.GetBool("cache_inmemory"),
+			Async:     viper.GetBool("async"),
+			CacheTimeout: &durationpb.Duration{
+				Seconds: int64(viper.GetDuration("cache_timeout").Seconds()),
+			},
+			UploadFolder: viper.GetString("upload_folder"),
+		},
+	})
 	if err != nil {
 		logger.Error(err.Error())
 	}

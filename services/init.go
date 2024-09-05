@@ -8,7 +8,6 @@ import (
 	minios3 "github.com/cantylv/thumbnail-loader/services/minio"
 	"github.com/cantylv/thumbnail-loader/services/sqlite"
 	"github.com/minio/minio-go/v7"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -20,11 +19,8 @@ type Services struct {
 
 func Init(logger *zap.Logger) (cluster *Services) {
 	cluster = new(Services)
-	if viper.GetBool("cache_inmemory") {
-		cluster.InMemoryCacheClient = memcached.Init(logger)
-	} else {
-		cluster.DBCacheClient = sqlite.Init(logger)
-	}
+	cluster.InMemoryCacheClient = memcached.Init(logger)
+	cluster.DBCacheClient = sqlite.Init(logger)
 	cluster.MinioClient = minios3.Init(logger)
 	return cluster
 }

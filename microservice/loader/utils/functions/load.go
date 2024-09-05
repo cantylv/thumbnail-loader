@@ -15,6 +15,7 @@ import (
 	"github.com/bradfitz/gomemcache/memcache"
 	"github.com/cantylv/thumbnail-loader/microservice/loader/internal/entity"
 	"github.com/cantylv/thumbnail-loader/microservice/loader/internal/props"
+	"github.com/cantylv/thumbnail-loader/microservice/loader/proto/gen"
 	"github.com/cantylv/thumbnail-loader/services"
 	"github.com/mailru/easyjson"
 	"github.com/minio/minio-go/v7"
@@ -27,7 +28,7 @@ import (
 func Load(ctx context.Context, p *props.Load) {
 	// it's for in-memory storages
 	cacheHitSuccess := make([]int, 0, len(p.Resolutions))
-	if p.CacheInmemoryNeed {
+	if p.Flags.NeedCache {
 		// key == video_id + width
 		// value == minio url
 		for i, imgResolutionWidth := range p.Resolutions {
@@ -39,7 +40,7 @@ func Load(ctx context.Context, p *props.Load) {
 				}
 				continue
 			}
-			getFromCacheAndUpload(i, string(item.Value), p.ServiceCluster, p.Logger)
+			getFromCacheAndUpload(i, string(item.Value), p.Flags, p.ServiceCluster, p.Logger)
 			cacheHitSuccess = append(cacheHitSuccess, imgResolutionWidth)
 		}
 	} else {
@@ -52,13 +53,13 @@ func Load(ctx context.Context, p *props.Load) {
 				}
 				continue
 			}
-			getFromCacheAndUpload(i, value, p.ServiceCluster, p.Logger)
+			getFromCacheAndUpload(i, value, p.Flags, p.ServiceCluster, p.Logger)
 			cacheHitSuccess = append(cacheHitSuccess, imgResolutionWidth)
 		}
 	}
 	missingResolutionWidth := getMissingImageWidth(cacheHitSuccess, p.Resolutions)
 	// if no cache hit
-	loadDataFromServerProps := props.GetLoadDataFromServer(p.VideoId, missingResolutionWidth, p.RepoCache, p.ServiceCluster, p.Logger)
+	loadDataFromServerProps := props.GetLoadDataFromServer(p.VideoId, missingResolutionWidth, p.Flags, p.RepoCache, p.ServiceCluster, p.Logger)
 	err := loadDataFromServer(loadDataFromServerProps)
 	if err != nil {
 		p.Logger.Error(fmt.Sprintf("error while loading image from youtube server: %v", err))
@@ -81,10 +82,10 @@ func getMissingImageWidth(cacheHitWidth []int, allResolutions []int) []int {
 	return res
 }
 
-func getFromCacheAndUpload(iteration int, value string, cluster *services.Services, logger *zap.Logger) {
+func getFromCacheAndUpload(iteration int, value string, flags *gen.CmdFlags, cluster *services.Services, logger *zap.Logger) {
 	imgUrlParts := strings.Split(value, "/")
 	if iteration == 0 {
-		loadPath := fmt.Sprintf("%s/%s", viper.GetString("upload_folder"), imgUrlParts[0])
+		loadPath := fmt.Sprintf("%s/%s", flags.UploadFolder, imgUrlParts[0])
 		err := os.MkdirAll(loadPath, 0755)
 		if err != nil {
 			logger.Error(fmt.Sprintf("error while creating folder: %v", err))
@@ -98,7 +99,7 @@ func getFromCacheAndUpload(iteration int, value string, cluster *services.Servic
 		return
 	}
 	logger.Info(fmt.Sprintf("video %s was received from cache", value))
-	err = writeFileInDirectory(value, imgData)
+	err = writeFileInDirectory(flags.UploadFolder, value, imgData)
 	if err != nil {
 		logger.Error(err.Error())
 		return
@@ -125,7 +126,7 @@ func loadDataFromServer(p *props.LoadDataFromServer) error {
 		return err
 	}
 
-	loadFolder := fmt.Sprintf("%s/%s", viper.GetString("upload_folder"), responseData.Items[0].Snippet.Title)
+	loadFolder := fmt.Sprintf("%s/%s", p.Flags.UploadFolder, responseData.Items[0].Snippet.Title)
 	err = os.MkdirAll(loadFolder, 0755)
 	if err != nil {
 		p.Logger.Error(fmt.Sprintf("error while creating folder: %v", err))
@@ -135,14 +136,14 @@ func loadDataFromServer(p *props.LoadDataFromServer) error {
 	// key - width, value - image byte
 	imgUrlS3 := make(map[entity.ThumbnailBody][]byte, len(missingThumbnails))
 	for _, descr := range missingThumbnails {
-		imgData, err := uploadImageFromYoutube(descr, responseData.Items[0].Snippet.Title)
+		imgData, err := uploadImageFromYoutube(descr, responseData.Items[0].Snippet.Title, p.Flags.UploadFolder)
 		if err != nil {
 			p.Logger.Error(fmt.Sprintf("error while uploading image: %v", err.Error()))
 		}
 		imgUrlS3[descr] = imgData
 	}
 
-	saveS3Props := props.GetSaveS3(imgUrlS3, viper.GetString("minio.bucket_name"), responseData.Items[0].Snippet.Title, p.VideoId, p.RepoCache, p.ServiceCluster, p.Logger)
+	saveS3Props := props.GetSaveS3(imgUrlS3, viper.GetString("minio.bucket_name"), responseData.Items[0].Snippet.Title, p.VideoId, p.RepoCache, p.Flags, p.ServiceCluster, p.Logger)
 	saveS3AndCache(saveS3Props)
 	return nil
 }
@@ -168,7 +169,7 @@ func getUncachedThumbnails(thumnails *entity.ThumbnailType, resolutionWidth []in
 
 // uploadImageFromYoutube
 // loads image from youtube servers and saves it in directory and loads it in minio
-func uploadImageFromYoutube(tBody entity.ThumbnailBody, loadFolder string) ([]byte, error) {
+func uploadImageFromYoutube(tBody entity.ThumbnailBody, loadFolder, uploadFolder string) ([]byte, error) {
 	httpResponse, err := http.Get(tBody.Url)
 	if err != nil {
 		return nil, err
@@ -178,7 +179,7 @@ func uploadImageFromYoutube(tBody entity.ThumbnailBody, loadFolder string) ([]by
 		return nil, err
 	}
 	loadPath := fmt.Sprintf("%s/%dx%d.jpg", loadFolder, tBody.Width, tBody.Height)
-	err = writeFileInDirectory(loadPath, imageBytes)
+	err = writeFileInDirectory(uploadFolder, loadPath, imageBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -188,8 +189,8 @@ func uploadImageFromYoutube(tBody entity.ThumbnailBody, loadFolder string) ([]by
 
 // writeFileInDirectory
 // creates file in loadFolder
-func writeFileInDirectory(loadPath string, data []byte) error {
-	file, err := os.Create(fmt.Sprintf("%s/%s", viper.GetString("upload_folder"), loadPath))
+func writeFileInDirectory(uploadFoler, loadPath string, data []byte) error {
+	file, err := os.Create(fmt.Sprintf("%s/%s", uploadFoler, loadPath))
 	if err != nil {
 		return err
 	}
@@ -217,9 +218,10 @@ func saveS3AndCache(p *props.SaveS3) error {
 		item := memcache.Item{
 			Key:        fmt.Sprintf("%s%d", p.VideoId, imgDescriptor.Width),
 			Value:      []byte(loadPath),
-			Expiration: int32(viper.GetDuration("memcached.cache_timeout").Seconds()),
+			Expiration: int32(p.Flags.CacheTimeout.Seconds),
 		}
-		if viper.GetBool("cache_inmemory") {
+		// means inmemory cache
+		if p.Flags.NeedCache {
 			err = p.Cluster.InMemoryCacheClient.Set(&item)
 			if err != nil {
 				p.Logger.Info(fmt.Sprintf("error while setting value in cache: %v", err.Error()))

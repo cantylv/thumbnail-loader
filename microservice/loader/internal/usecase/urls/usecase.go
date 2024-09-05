@@ -11,7 +11,6 @@ import (
 	"github.com/cantylv/thumbnail-loader/microservice/loader/proto/gen"
 	"github.com/cantylv/thumbnail-loader/microservice/loader/utils/functions"
 	"github.com/cantylv/thumbnail-loader/services"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -38,29 +37,27 @@ func NewUsecaseLayer(repo cache.Repo, serviceCluster *services.Services, logger 
 // video resolutions for cache
 var resolutions = []int{120, 320, 480, 640, 1280}
 
-func (r *UsecaseLayer) Download(ctx context.Context, args *gen.Args) (*emptypb.Empty, error) {
-	ids, err := functions.GetVideosId(args.Data, r.logger)
+func (r *UsecaseLayer) Download(ctx context.Context, p *gen.DownloadProps) (*emptypb.Empty, error) {
+	ids, err := functions.GetVideosId(p.Arguments.Data, r.logger)
 	if err != nil {
 		r.logger.Info(fmt.Sprintf("%v. EXAMPLE: app --cache_inmemory=false --async=true https://www.youtube.com/watch?v=6wTWF707WWE https://www.youtube.com/watch?v=5ZkdpWNtx58", err))
 		return nil, nil
 	}
 
 	// create root folder for saving files
-	err = os.MkdirAll(viper.GetString("upload_folder"), 0755)
+	err = os.MkdirAll(p.Flags.UploadFolder, 0755)
 	if err != nil {
 		r.logger.Error(fmt.Sprintf("error while creating folder: %v", err))
 		return nil, nil
 	}
 
-	cacheInmemoryNeed := viper.GetBool("cache_inmemory")
-	asyncNeed := viper.GetBool("async")
-	if asyncNeed {
+	if p.Flags.Async {
 		r.logger.Info("asynchronous loading started")
 		var wg sync.WaitGroup
 		for _, id := range ids {
 			wg.Add(1)
 			go func(wgOut *sync.WaitGroup) {
-				p := props.GetLoad(id, cacheInmemoryNeed, resolutions, r.repoCacheDb, r.serviceCluster, r.logger)
+				p := props.GetLoad(id, p.Flags, resolutions, r.repoCacheDb, r.serviceCluster, r.logger)
 				functions.Load(ctx, p)
 				wgOut.Done()
 			}(&wg)
@@ -69,7 +66,7 @@ func (r *UsecaseLayer) Download(ctx context.Context, args *gen.Args) (*emptypb.E
 	} else {
 		r.logger.Info("synchronous loading started")
 		for _, id := range ids {
-			p := props.GetLoad(id, cacheInmemoryNeed, resolutions, r.repoCacheDb, r.serviceCluster, r.logger)
+			p := props.GetLoad(id, p.Flags, resolutions, r.repoCacheDb, r.serviceCluster, r.logger)
 			functions.Load(ctx, p)
 		}
 	}

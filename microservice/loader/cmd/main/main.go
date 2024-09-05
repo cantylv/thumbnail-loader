@@ -40,6 +40,12 @@ func main() {
 				logger.Error(fmt.Sprintf("error while closing memcached: %v", err))
 			}
 		}
+		if serviceCluster.DBCacheClient != nil {
+			err := serviceCluster.DBCacheClient.Close()
+			if err != nil {
+				logger.Error(fmt.Sprintf("error while closing sqlite: %v", err))
+			}
+		}
 	}(serviceCluster)
 	repoLayer := urls.NewRepoLayer(serviceCluster.DBCacheClient)
 	context, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -61,6 +67,6 @@ func main() {
 	<-c
 
 	server.GracefulStop()
-	logger.Info("microservice \"download\" user has shut down")
+	logger.Info("microservice \"download\" has shut down")
 	os.Exit(0)
 }

@@ -27,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DownloadManagerClient interface {
-	Download(ctx context.Context, in *Args, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Download(ctx context.Context, in *DownloadProps, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type downloadManagerClient struct {
@@ -38,7 +38,7 @@ func NewDownloadManagerClient(cc grpc.ClientConnInterface) DownloadManagerClient
 	return &downloadManagerClient{cc}
 }
 
-func (c *downloadManagerClient) Download(ctx context.Context, in *Args, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *downloadManagerClient) Download(ctx context.Context, in *DownloadProps, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, DownloadManager_Download_FullMethodName, in, out, cOpts...)
@@ -52,7 +52,7 @@ func (c *downloadManagerClient) Download(ctx context.Context, in *Args, opts ...
 // All implementations must embed UnimplementedDownloadManagerServer
 // for forward compatibility.
 type DownloadManagerServer interface {
-	Download(context.Context, *Args) (*emptypb.Empty, error)
+	Download(context.Context, *DownloadProps) (*emptypb.Empty, error)
 	mustEmbedUnimplementedDownloadManagerServer()
 }
 
@@ -63,7 +63,7 @@ type DownloadManagerServer interface {
 // pointer dereference when methods are called.
 type UnimplementedDownloadManagerServer struct{}
 
-func (UnimplementedDownloadManagerServer) Download(context.Context, *Args) (*emptypb.Empty, error) {
+func (UnimplementedDownloadManagerServer) Download(context.Context, *DownloadProps) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Download not implemented")
 }
 func (UnimplementedDownloadManagerServer) mustEmbedUnimplementedDownloadManagerServer() {}
@@ -88,7 +88,7 @@ func RegisterDownloadManagerServer(s grpc.ServiceRegistrar, srv DownloadManagerS
 }
 
 func _DownloadManager_Download_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Args)
+	in := new(DownloadProps)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func _DownloadManager_Download_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: DownloadManager_Download_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DownloadManagerServer).Download(ctx, req.(*Args))
+		return srv.(DownloadManagerServer).Download(ctx, req.(*DownloadProps))
 	}
 	return interceptor(ctx, in, info, handler)
 }

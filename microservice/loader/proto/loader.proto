@@ -3,11 +3,24 @@ syntax = "proto3";
 option go_package = "./gen";
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto";
 
 service DownloadManager {
-  rpc Download (Args) returns (google.protobuf.Empty);
+  rpc Download (DownloadProps) returns (google.protobuf.Empty);
 }
 
 message Args {
   repeated string data = 1;
+}
+
+message CmdFlags {
+  bool needCache = 1;
+  bool async = 2;
+  google.protobuf.Duration cacheTimeout = 3;
+	string uploadFolder = 4;
+}
+
+message DownloadProps {
+  Args arguments = 1;
+  CmdFlags flags = 2;
 }

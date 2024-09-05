@@ -10,6 +10,13 @@ import (
 	"go.uber.org/zap"
 )
 
+type CmdFlags struct {
+	NeedCache    bool
+	Async        bool
+	CacheTimeout time.Duration
+	UploadFolder string
+}
+
 func setDefaultParameters() {
 	viper.AutomaticEnv()
 

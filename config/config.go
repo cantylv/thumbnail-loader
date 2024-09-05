@@ -20,11 +20,6 @@ type CmdFlags struct {
 func setDefaultParameters() {
 	viper.AutomaticEnv()
 
-	// __memcached__ variables
-	viper.SetDefault("memcached.host", "memcached")
-	viper.SetDefault("memcached.port", 11211)
-	viper.SetDefault("memcached.cache_timeout", time.Minute*10)
-
 	// __grpc_download variables
 	viper.SetDefault("grpc_loader.host", "localhost")
 	viper.SetDefault("grpc_loader.port", 8001)
@@ -32,14 +27,7 @@ func setDefaultParameters() {
 	// __project__ variables
 	viper.SetDefault("async", false)
 	viper.SetDefault("cache_inmemory", false)
-
-	// __minio__ variables
-	viper.SetDefault("minio.host", "minio")
-	viper.SetDefault("minio.port", 9000)
-	viper.SetDefault("minio.bucket_name", "images")
-	viper.SetDefault("minio.access_key", "admin")
-	viper.SetDefault("minio.secret_access_key", 123)
-	viper.SetDefault("minio.use_ssl", false)
+	viper.SetDefault("cache_timeout", 30*time.Second)
 
 	if viper.Get("UPLOAD_FOLDER") == nil {
 		viper.SetDefault("upload_folder", "uploads")
@@ -58,7 +46,7 @@ func readCmdFlags() {
 		"determines 'type' of cache; if true, cache data will be stored in ram, in another way in winchester")
 	pflag.BoolVarP(&async, "async", "a", false,
 		"configure whether asynchronous loading is required")
-	pflag.DurationVarP(&cacheTimeout, "cache_timeout", "t", time.Minute*10,
+	pflag.DurationVarP(&cacheTimeout, "cache_timeout", "t", 30*time.Second,
 		"the duration for which cache instance will store data")
 	pflag.StringVarP(&uploadFolder, "upload_folder", "u", "uploads",
 		"the destination folder for uploading files from youtube")

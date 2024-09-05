@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -17,7 +18,6 @@ import (
 	"github.com/cantylv/thumbnail-loader/microservice/loader/internal/props"
 	"github.com/cantylv/thumbnail-loader/microservice/loader/proto/gen"
 	"github.com/cantylv/thumbnail-loader/services"
-	"github.com/mailru/easyjson"
 	"github.com/minio/minio-go/v7"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
@@ -28,6 +28,7 @@ import (
 func Load(ctx context.Context, p *props.Load) {
 	// it's for in-memory storages
 	cacheHitSuccess := make([]int, 0, len(p.Resolutions))
+	countSuccessHit := 0
 	if p.Flags.NeedCache {
 		// key == video_id + width
 		// value == minio url
@@ -42,6 +43,7 @@ func Load(ctx context.Context, p *props.Load) {
 			}
 			getFromCacheAndUpload(i, string(item.Value), p.Flags, p.ServiceCluster, p.Logger)
 			cacheHitSuccess = append(cacheHitSuccess, imgResolutionWidth)
+			countSuccessHit++
 		}
 	} else {
 		for i, imgResolutionWidth := range p.Resolutions {
@@ -55,15 +57,18 @@ func Load(ctx context.Context, p *props.Load) {
 			}
 			getFromCacheAndUpload(i, value, p.Flags, p.ServiceCluster, p.Logger)
 			cacheHitSuccess = append(cacheHitSuccess, imgResolutionWidth)
+			countSuccessHit++
 		}
 	}
-	missingResolutionWidth := getMissingImageWidth(cacheHitSuccess, p.Resolutions)
-	// if no cache hit
-	loadDataFromServerProps := props.GetLoadDataFromServer(p.VideoId, missingResolutionWidth, p.Flags, p.RepoCache, p.ServiceCluster, p.Logger)
-	err := loadDataFromServer(loadDataFromServerProps)
-	if err != nil {
-		p.Logger.Error(fmt.Sprintf("error while loading image from youtube server: %v", err))
-		return
+	// if no cache hit OR not everything is cached
+	if countSuccessHit != len(p.Resolutions) {
+		missingResolutionWidth := getMissingImageWidth(cacheHitSuccess, p.Resolutions)
+		loadDataFromServerProps := props.GetLoadDataFromServer(p.VideoId, missingResolutionWidth, p.Flags, p.RepoCache, p.ServiceCluster, p.Logger)
+		err := loadDataFromServer(loadDataFromServerProps)
+		if err != nil {
+			p.Logger.Error(fmt.Sprintf("error while loading image from youtube server: %v", err))
+			return
+		}
 	}
 	p.Logger.Info(fmt.Sprintf("Video with id=%s was succesful uploaded", p.VideoId))
 }
@@ -121,7 +126,7 @@ func loadDataFromServer(p *props.LoadDataFromServer) error {
 	}
 
 	var responseData entity.Response
-	err = easyjson.Unmarshal(body, &responseData)
+	err = json.Unmarshal(body, &responseData)
 	if err != nil {
 		return err
 	}
@@ -215,11 +220,13 @@ func saveS3AndCache(p *props.SaveS3) error {
 		if err != nil {
 			return err
 		}
+		key := fmt.Sprintf("%s%d", p.VideoId, imgDescriptor.Width)
 		item := memcache.Item{
-			Key:        fmt.Sprintf("%s%d", p.VideoId, imgDescriptor.Width),
+			Key:        key,
 			Value:      []byte(loadPath),
 			Expiration: int32(p.Flags.CacheTimeout.Seconds),
 		}
+
 		// means inmemory cache
 		if p.Flags.NeedCache {
 			err = p.Cluster.InMemoryCacheClient.Set(&item)
@@ -228,7 +235,7 @@ func saveS3AndCache(p *props.SaveS3) error {
 				continue
 			}
 		} else {
-			err = p.RepoCache.Save(context.Background(), fmt.Sprintf("%s%d", p.VideoId, imgDescriptor.Width), loadPath)
+			err = p.RepoCache.Save(context.Background(), key, loadPath)
 			if err != nil {
 				p.Logger.Info(fmt.Sprintf("error while setting value in cache: %v", err.Error()))
 				continue

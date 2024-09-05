@@ -20,9 +20,9 @@ import (
 
 func main() {
 	logger := zap.Must(zap.NewProduction())
-	config.Read("../../../../config/config.yaml", logger)
+	config.Read("./microservice/loader/config/config.yaml", logger)
 
-	address := fmt.Sprintf(":%d", viper.GetInt("grpc_loader.port"))
+	address := fmt.Sprintf("%s:%d", viper.GetString("grpc_loader.host"), viper.GetInt("grpc_loader.port"))
 	conn, err := net.Listen("tcp", address)
 	if err != nil {
 		logger.Fatal("microservice \"download\" doesn't respond", zap.String("error", err.Error()))
@@ -52,7 +52,7 @@ func main() {
 	defer cancel()
 	err = repoLayer.Init(context)
 	if err != nil {
-		logger.Error(err.Error())
+		logger.Fatal(err.Error())
 	}
 	usecaseLayer := ucUrls.NewUsecaseLayer(repoLayer, serviceCluster, logger)
 

@@ -24,7 +24,7 @@ func Init(logger *zap.Logger) *minio.Client {
 		logger.Fatal("Failed to connect to Minio", zap.String("error", err.Error()))
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	makeBucket(client, viper.GetString("minio.bucket_name"), ctx, logger)
 	logger.Info("Minio connected successfully")

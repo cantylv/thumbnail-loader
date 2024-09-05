@@ -50,7 +50,6 @@ func (r *UsecaseLayer) Download(ctx context.Context, p *gen.DownloadProps) (*emp
 		r.logger.Error(fmt.Sprintf("error while creating folder: %v", err))
 		return nil, nil
 	}
-
 	if p.Flags.Async {
 		r.logger.Info("asynchronous loading started")
 		var wg sync.WaitGroup

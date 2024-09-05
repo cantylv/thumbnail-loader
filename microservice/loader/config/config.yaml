@@ -1,0 +1,19 @@
+upload:
+  key: AIzaSyCwldouyj4wqx88BMEDKyHlhgeBCLjvhp8
+
+memcached:
+  host: localhost
+  port: 11211
+  cache_timeout: 10m
+
+minio:
+  host: localhost
+  port: 9000
+  bucket_name: images
+  access_key: admin
+  secret_access_key: admin123
+  use_ssl: false
+
+grpc_loader:
+  host: localhost
+  port: 8000

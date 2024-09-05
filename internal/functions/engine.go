@@ -35,7 +35,7 @@ func StartEngine(client gen.DownloadManagerClient, logger *zap.Logger) {
 			NeedCache: viper.GetBool("cache_inmemory"),
 			Async:     viper.GetBool("async"),
 			CacheTimeout: &durationpb.Duration{
-				Seconds: int64(viper.GetDuration("cache_timeout").Seconds()),
+				Seconds: int64(viper.GetDuration("memcached.cache_timeout").Seconds()),
 			},
 			UploadFolder: viper.GetString("upload_folder"),
 		},

@@ -11,7 +11,7 @@ import (
 )
 
 func Init(logger *zap.Logger) *sql.DB {
-	db, err := sql.Open("sqlite3", "../../services/sqlite/data/database.db")
+	db, err := sql.Open("sqlite3", "./services/sqlite/data/database.db")
 	if err != nil {
 		logger.Fatal(fmt.Sprintf("fatal error while connecting to sqlite: %v", err))
 	}

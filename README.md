@@ -9,8 +9,7 @@
 ## Содержание
 - [Технологии](#технологии)
 - [Начало работы](#использование)
-- [Работа с утилитой](#утилита)
-- [Deploy и CI/CD](#deploy-и-ci/cd)
+- [Работа с утилитой](#описание)
 
 ## Технологии
 - [Golang1.22.5](https://go.dev/doc/install)
@@ -42,7 +41,7 @@ $ make run
 go run cmd/main/main.go --cache_inmemory=true --async=true --cache_timeout=100s https://www.youtube.com/watch\?v\=42M3esYyHdw https://www.youtube.com/watch\?v\=3EhxLz1EFIM https://www.youtube.com/watch\?v\=HjGDJk4kOYk https://www.youtube.com/watch\?v\=MYjgu-IzGEI https://www.youtube.com/watch\?v\=_MBdQhW22VI
 ```
 
-## Работа с утилитой
+## Описание
 При запуске программы вы можете передать флаги, которые выполняют определенные функции:
 ```
 -a, --async                    configure whether asynchronous loading is required

@@ -2,6 +2,6 @@
 .vscode/
 services/minio/data
 services/sqlite/data
-internal/entity/entity_easyjson.go
+microservice/loader/internal/entity/entity_easyjson.go
 uploads
 vendor

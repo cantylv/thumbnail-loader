@@ -12,10 +12,14 @@ vendor:
 tidy:
 	go mod tidy
 
-init: tidy pb 
+gen:
+	go generate ./...
+
+init: gen tidy pb 
 	mkdir ./services/minio/data ./services/sqlite/data
 	touch ./services/sqlite/data/database.db
 
 run: vendor
+	go test -v ./...
 	docker-compose up -d
 	go run ./microservice/loader/cmd/main

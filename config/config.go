@@ -22,7 +22,7 @@ func setDefaultParameters() {
 
 	// __grpc_download variables
 	viper.SetDefault("grpc_loader.host", "localhost")
-	viper.SetDefault("grpc_loader.port", 8001)
+	viper.SetDefault("grpc_loader.port", 8000)
 
 	// __project__ variables
 	viper.SetDefault("async", false)

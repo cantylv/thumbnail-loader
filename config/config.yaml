@@ -1,8 +1,8 @@
 grpc_loader:
   host: localhost
-  port: 8000
+  port: 8001
   
-async: false
-cache_inmemory: false
-upload_folder: uploads
-cache_timeout: 30s
+async: true
+cache_inmemory: true
+upload_folder: thumbnails
+cache_timeout: 60s

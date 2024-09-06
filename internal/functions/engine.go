@@ -20,12 +20,11 @@ var (
 
 // StartEngine
 // makes grpc requests
-func StartEngine(client gen.DownloadManagerClient, logger *zap.Logger) {
+func StartEngine(client gen.DownloadManagerClient, logger *zap.Logger) error {
 	// get cmd args
 	cmdArgs, err := getCmdArgs(logger)
 	if err != nil {
-		logger.Error(err.Error())
-		return
+		return err
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(3*len(cmdArgs))*time.Second)
 	defer cancel()
@@ -40,9 +39,7 @@ func StartEngine(client gen.DownloadManagerClient, logger *zap.Logger) {
 			UploadFolder: viper.GetString("upload_folder"),
 		},
 	})
-	if err != nil {
-		logger.Error(err.Error())
-	}
+	return err
 }
 
 func getCmdArgs(logger *zap.Logger) ([]string, error) {
@@ -64,7 +61,7 @@ func getCmdArgs(logger *zap.Logger) ([]string, error) {
 }
 
 // isYoutubeUrl
-// checks that uri has youtube domain
+// checks that uri has youtube domain; return error only if pattern 'hasDomain' has invalid syntax
 func isYoutubeUrl(input string) (bool, error) {
 	matched, err := regexp.MatchString(hasDomain, input)
 	if err != nil {

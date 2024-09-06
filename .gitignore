@@ -5,3 +5,7 @@ services/sqlite/data
 microservice/loader/internal/entity/entity_easyjson.go
 uploads
 vendor
+*.out
+*.html
+*.pb.go
+*/**/mocks

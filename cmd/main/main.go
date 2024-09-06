@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func main() {
+func main(){
 	logger := zap.Must(zap.NewProduction())
 	// reading env variables, config file, cli flags
 	config.Read("./config/config.yaml", logger)

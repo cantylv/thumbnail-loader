@@ -24,8 +24,10 @@ func Run(logger *zap.Logger) {
 		}
 	}(serverConnect)
 	if err != nil {
-		logger.Error(fmt.Sprintf("error while creating grpc client: %v", err))
-		return
+		logger.Fatal(fmt.Sprintf("error while creating grpc client: %v", err))
 	}
-	functions.StartEngine(gen.NewDownloadManagerClient(serverConnect), logger)
+	err = functions.StartEngine(gen.NewDownloadManagerClient(serverConnect), logger)
+	if err != nil {
+		logger.Error(err.Error())
+	}
 }

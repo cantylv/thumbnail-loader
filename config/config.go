@@ -64,9 +64,10 @@ func Read(path string, logger *zap.Logger) {
 	viper.SetConfigFile(path)
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(*os.PathError); !ok {
-			logger.Panic(fmt.Sprintf("fatal error config file: %v", err))
+			logger.Fatal(fmt.Sprintf("fatal error config file: %v", err))
 		}
-		logger.Warn("warning: configuration file is not found, programm will be executed within default configuration")
+		logger.Error(fmt.Sprintf("error while reading conf file: %v", err))
+		logger.Info("configuration file is not found, programm will be executed within default configuration")
 	}
 	logger.Info("successful read of configuration")
 }

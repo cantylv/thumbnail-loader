@@ -20,6 +20,5 @@ init: gen tidy pb
 	touch ./services/sqlite/data/database.db
 
 run: vendor
-	go test -v ./...
 	docker-compose up -d
 	go run ./microservice/loader/cmd/main

@@ -1,26 +1,22 @@
 package services
 
 import (
-	"database/sql"
-
-	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/cantylv/thumbnail-loader/services/memcached"
-	minios3 "github.com/cantylv/thumbnail-loader/services/minio"
-	"github.com/cantylv/thumbnail-loader/services/sqlite"
-	"github.com/minio/minio-go/v7"
+	"github.com/cantylv/thumbnail-loader/services/connectors"
 	"go.uber.org/zap"
 )
 
 type Services struct {
-	DBCacheClient       *sql.DB
-	InMemoryCacheClient *memcache.Client
-	MinioClient         *minio.Client
+	DBCacheClient       connectors.ClientDB
+	InMemoryCacheClient connectors.ClientCache
+	MinioClient         connectors.ClientS3
 }
 
-func Init(logger *zap.Logger) (cluster *Services) {
-	cluster = new(Services)
-	cluster.InMemoryCacheClient = memcached.Init(logger)
-	cluster.DBCacheClient = sqlite.Init(logger)
-	cluster.MinioClient = minios3.Init(logger)
-	return cluster
+// var _ sqlite.Client = sqlite.Init(zap.Must(zap.NewProduction()))
+
+func Init(logger *zap.Logger, inMemoryClient connectors.EngineCache, dbCacheClient connectors.EngineDB, minioClient connectors.EngineS3) (cluster *Services) {
+	return &Services{
+		InMemoryCacheClient: inMemoryClient.InitClientCache(logger),
+		DBCacheClient:       dbCacheClient.InitClientDB(logger),
+		MinioClient:         minioClient.InitClientS3(logger),
+	}
 }

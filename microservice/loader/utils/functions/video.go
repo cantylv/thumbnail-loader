@@ -1,6 +1,8 @@
 package functions
 
 import (
+	"unicode/utf8"
+
 	e "github.com/cantylv/thumbnail-loader/microservice/loader/utils/myerrors"
 	"go.uber.org/zap"
 )
@@ -41,6 +43,9 @@ func getQueryParameter(url, parameterName string) string {
 // findSubstringIndex
 // returns the index of query parametr (index of first symbol of query parameter name)
 func findSubstringIndex(str, subStr string) (startIndex int) {
+	if utf8.RuneCount([]byte(subStr)) == 0 || utf8.RuneCount([]byte(str)) == 0 {
+		return -1
+	}
 	var i, j int
 	var isCheckingMatch bool
 	for ; i < len(str) && j < len(subStr); i++ {

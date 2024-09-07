@@ -2,7 +2,8 @@ package urls
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/cantylv/thumbnail-loader/services/connectors"
 )
 
 type Repo interface {
@@ -12,10 +13,10 @@ type Repo interface {
 }
 
 type RepoLayer struct {
-	db *sql.DB
+	db connectors.ClientDB
 }
 
-func NewRepoLayer(db *sql.DB) *RepoLayer {
+func NewRepoLayer(db connectors.ClientDB) *RepoLayer {
 	return &RepoLayer{
 		db: db,
 	}

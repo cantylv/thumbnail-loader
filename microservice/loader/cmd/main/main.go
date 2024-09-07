@@ -13,6 +13,9 @@ import (
 	ucUrls "github.com/cantylv/thumbnail-loader/microservice/loader/internal/usecase/urls"
 	"github.com/cantylv/thumbnail-loader/microservice/loader/proto/gen"
 	"github.com/cantylv/thumbnail-loader/services"
+	"github.com/cantylv/thumbnail-loader/services/memcached"
+	"github.com/cantylv/thumbnail-loader/services/minio"
+	"github.com/cantylv/thumbnail-loader/services/sqlite"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -32,7 +35,10 @@ func main() {
 	// init grpc server
 	server := grpc.NewServer()
 	// initialization of rdbms, s3, in-memory storage
-	serviceCluster := services.Init(logger)
+	inMemoryClient := memcached.NewClientInstanse()
+	s3Client := minio.NewClientInstanse()
+	dbClient := sqlite.NewClientInstanse()
+	serviceCluster := services.Init(logger, inMemoryClient, dbClient, s3Client)
 	defer func(cluster *services.Services) {
 		if serviceCluster.InMemoryCacheClient != nil {
 			err := serviceCluster.InMemoryCacheClient.Close()
